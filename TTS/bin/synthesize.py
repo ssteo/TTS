@@ -12,7 +12,6 @@ from pathlib import Path
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
 
-
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -158,10 +157,10 @@ def main():
 
     # CASE2: load pre-trained models
     if args.model_name is not None:
-        model_path, config_path = manager.download_model(args.model_name)
+        model_path, config_path, config = manager.download_model(args.model_name)
 
     if args.vocoder_name is not None:
-        vocoder_path, vocoder_config_path = manager.download_model(args.vocoder_name)
+        vocoder_path, vocoder_config_path, config = manager.download_model(args.vocoder_name)
 
     # CASE3: load custome models
     if args.model_path is not None:
@@ -173,8 +172,13 @@ def main():
         vocoder_config_path = args.vocoder_config_path
 
     # RUN THE SYNTHESIS
-    # load models
-    synthesizer = Synthesizer(model_path, config_path, vocoder_path, vocoder_config_path, args.use_cuda)
+    synthesizer = Synthesizer(
+        tts_checkpoint=model_path,
+        tts_config_path=config_path,
+        vocoder_checkpoint=vocoder_path,
+        vocoder_config=vocoder_config_path,
+        use_cuda=args.use_cuda
+    )
 
     use_griffin_lim = vocoder_path is None
     print(" > Text: {}".format(args.text))
@@ -203,14 +207,13 @@ def main():
     #         gst_style = args.gst_style
 
     # kick it
-    wav = synthesizer.tts(args.text)
 
-    # save the results
-    file_name = args.text.replace(" ", "_")[0:20]
-    file_name = file_name.translate(
-        str.maketrans('', '', string.punctuation.replace('_', ''))) + '.wav'
-    out_path = os.path.join(args.out_path, file_name)
-    print(" > Saving output to {}".format(out_path))
+    f = open("/home/jackal/Downloads/transcript", "r")
+    text = f.read()
+    f.close()
+
+    wav = synthesizer.tts(text.strip())
+    out_path = "/home/jackal/Downloads/output.wav"
     synthesizer.save_wav(wav, out_path)
 
 
